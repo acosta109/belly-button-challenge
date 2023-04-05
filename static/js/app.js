@@ -39,17 +39,18 @@ function init() {
         // Build the initial plots
        // buildMetadata(sample_one);
         buildBarChart(sample_one);
-        //buildBubbleChart(sample_one);
+        buildBubbleChart(sample_one);
         //buildGaugeChart(sample_one);
 
     });
 };
 
+//First we build the bar chart
 function buildBarChart(sampleID){
     //Gather the data for this function
     d3.json(url).then((data) => {
         // First, we collect the samples data
-        let samples = data.samples
+        let samples = data.samples;
         
         //Filter the data so it's just the ID we want.
         let value = samples.filter(result => result.id == sampleID); 
@@ -60,15 +61,15 @@ function buildBarChart(sampleID){
 
         let sampleValue = firstValue.sample_values;
         let otuID = firstValue.otu_ids;
-        let otuLables = firstValue.otu_labels;
+        let otuLabels = firstValue.otu_labels;
 
         //Log to console to ensure we got the correct data
-        console.log(sampleValue, otuID, otuLables);
+        console.log(sampleValue, otuID, otuLabels);
 
         // Set top ten items to display in descending order
-        let yticks = otuID.slice(0,10).map(id => `OTU ${id}`).reverse();
         let xticks = sampleValue.slice(0,10).reverse();
-        let labels = otuLables.slice(0,10).reverse();
+        let yticks = otuID.slice(0,10).map(id => `OTU ${id}`).reverse();
+        let labels = otuLabels.slice(0,10).reverse();
 
 
         let barGraph = {
@@ -78,12 +79,56 @@ function buildBarChart(sampleID){
             type: "bar",
             orientation: "h"
         };
-
+        //Create dicitionary of data
         barData = [barGraph];
+        //graph
         Plotly.newPlot("bar", barData);
     });
 
 };
+
+//Now, we build the bubble chart
+function buildBubbleChart(sampleID){
+    //Gather the data for this function
+    d3.json(url).then((data) => {
+        // First, we collect the samples data
+        let samples = data.samples;
+        
+        //Filter the data so it's just the ID we want.
+        let value = samples.filter(result => result.id == sampleID); 
+        //Get the first item with this value -- there should be only one TSBOO!
+        let firstValue = value[0];
+        //Extract the data we want for our graphs
+        let sampleValue = firstValue.sample_values;
+        let otuID = firstValue.otu_ids;
+        let otuLabels = firstValue.otu_labels;
+        //Check if we were successful
+        console.log(sampleValue, otuID, otuLabels);
+        //Create the chart data
+        let bubbleChart = {
+            x: otuID,
+            y: sampleValue,
+            text: otuLabels,
+            mode: "markers",
+            marker: {
+                size: sampleValue,
+                color: otuID,
+                colorscale: "Earth"
+            }
+        };
+        //Establish the layout
+        let layout = {
+            hovermode: "closest",
+            xaxis: {title: "OTU ID"}
+        };
+        //make the dictionary
+        let bubbleData = [bubbleChart];
+        //graph
+        Plotly.newPlot("bubble", bubbleData, layout);
+
+    })  
+};
+
 
 //Now, we want to start the page with the initalised data.
 init();
