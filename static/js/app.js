@@ -6,7 +6,7 @@ d3.json(url).then(function(data) {
     console.log(data)
 });
 
-//Initialise the dashboard and populate the drop down menu
+// Initialise the dashboard at start up 
 function init() {
 
     // Use D3 to select the dropdown menu
@@ -15,19 +15,16 @@ function init() {
     // Use D3 to get sample names and populate the drop-down selector
     d3.json(url).then((data) => {
         
-        // We are collecting the names from the json data. data is our dataset and names is the key value.
-        // We can check this by openning the json file. 
+        // Set a variable for the sample names
         let names = data.names;
 
-        // Now, we add the sample names we collected to the drop down menu. 
+        // Add  samples to dropdown menu
         names.forEach((id) => {
 
-            // Log each iD
+            // Validating
             console.log(id);
-            //Finally, we add the IDs to the drop down menu. 
-            dropdownMenu.append("option")
-            .text(id)
-            .property("value",id);
+            //Make the drop down
+            dropdownMenu.append("option").text(id).property("value",id);
         });
 
         // Set the first sample from the list
@@ -37,7 +34,7 @@ function init() {
         console.log(sample_one);
 
         // Build the initial plots
-       // buildMetadata(sample_one);
+        buildMetadata(sample_one);
         buildBarChart(sample_one);
         buildBubbleChart(sample_one);
         //buildGaugeChart(sample_one);
@@ -45,88 +42,139 @@ function init() {
     });
 };
 
-//First we build the bar chart
-function buildBarChart(sampleID){
-    //Gather the data for this function
-    d3.json(url).then((data) => {
-        // First, we collect the samples data
-        let samples = data.samples;
-        
-        //Filter the data so it's just the ID we want.
-        let value = samples.filter(result => result.id == sampleID); 
+//Building the Metadata section
+// We'll be working on this section "sample-metadata"
+function buildMetadata(sample) {
 
+    // Use D3 to retrieve all of the data
+    d3.json(url).then((data) => {
+
+        // Set the metadata to a variable
+        let metadata = data.metadata;
 
         //Get the first item with this value -- there should be only one TSBOO!
-        let firstValue = value[0];
+        let value = metadata.filter(result => result.id == sample);
 
-        let sampleValue = firstValue.sample_values;
-        let otuID = firstValue.otu_ids;
-        let otuLabels = firstValue.otu_labels;
+        // Check to make sure we got the data
+        console.log(value)
 
-        //Log to console to ensure we got the correct data
-        console.log(sampleValue, otuID, otuLabels);
+        // Get the first index from the array
+        let firstData = value[0];
 
-        // Set top ten items to display in descending order
-        let xticks = sampleValue.slice(0,10).reverse();
-        let yticks = otuID.slice(0,10).map(id => `OTU ${id}`).reverse();
-        let labels = otuLabels.slice(0,10).reverse();
+        // Clear out metadata
+        d3.select("#sample-metadata").html("");
 
+        // Use Object.entries to add each key/value pair to the panel
+        Object.entries(firstData).forEach(([key,value]) => {
 
-        let barGraph = {
-            x : xticks,
-            y : yticks, 
-            labels: labels, 
-            type: "bar",
-            orientation: "h"
-        };
-        //Create dicitionary of data
-        barData = [barGraph];
-        //graph
-        Plotly.newPlot("bar", barData);
+            // Log the individual key/value pairs as they are being appended to the metadata panel
+            console.log(key,value);
+
+            d3.select("#sample-metadata").append("h5").text(`${key}: ${value}`);
+        });
     });
 
 };
 
-//Now, we build the bubble chart
-function buildBubbleChart(sampleID){
-    //Gather the data for this function
+// Here, we're building the bar chart
+function buildBarChart(sample) {
+
+    // Use D3 to retrieve all of the data
     d3.json(url).then((data) => {
-        // First, we collect the samples data
-        let samples = data.samples;
-        
-        //Filter the data so it's just the ID we want.
-        let value = samples.filter(result => result.id == sampleID); 
+
+        // Retrieve all sample data
+        let sampleInfo = data.samples;
+
         //Get the first item with this value -- there should be only one TSBOO!
-        let firstValue = value[0];
-        //Extract the data we want for our graphs
-        let sampleValue = firstValue.sample_values;
-        let otuID = firstValue.otu_ids;
-        let otuLabels = firstValue.otu_labels;
-        //Check if we were successful
-        console.log(sampleValue, otuID, otuLabels);
-        //Create the chart data
-        let bubbleChart = {
-            x: otuID,
-            y: sampleValue,
-            text: otuLabels,
+        let value = sampleInfo.filter(result => result.id == sample);
+
+       
+        let firstData = value[0];
+
+        // Get the data we want to display
+        let otu_ids = firstData.otu_ids;
+        let otu_labels = firstData.otu_labels;
+        let sample_values = firstData.sample_values;
+
+        // Log the data to the console
+        console.log(otu_ids,otu_labels,sample_values);
+
+        // Set top ten items to display in descending order
+        let xticks = sample_values.slice(0,10).reverse();
+        let yticks = otu_ids.slice(0,10).map(id => `OTU ${id}`).reverse();
+        let labels = otu_labels.slice(0,10).reverse();
+        
+        // Set up the trace for the bar chart
+        let trace = {
+            x: xticks,
+            y: yticks,
+            text: labels,
+            type: "bar",
+            orientation: "h"
+        };
+        let graphData = [trace]
+        // Call Plotly to plot the bar chart
+        Plotly.newPlot("bar", graphData)
+    });
+};
+
+// Function that builds the bubble chart
+function buildBubbleChart(sample) {
+
+    // Use D3 to retrieve all of the data
+    d3.json(url).then((data) => {
+        
+        // Retrieve all sample data
+        let sampleInfo = data.samples;
+
+        //Get the first item with this value -- there should be only one TSBOO!
+        let value = sampleInfo.filter(result => result.id == sample);
+
+        let firstData = value[0];
+
+        // Get the graph data
+        let otu_ids = firstData.otu_ids;
+        let otu_labels = firstData.otu_labels;
+        let sample_values = firstData.sample_values;
+
+        // Checking data
+        console.log(otu_ids,otu_labels,sample_values);
+        
+        // Make chart data
+        let trace1 = {
+            x: otu_ids,
+            y: sample_values,
+            text: otu_labels,
             mode: "markers",
             marker: {
-                size: sampleValue,
-                color: otuID,
+                size: sample_values,
+                color: otu_ids,
                 colorscale: "Earth"
             }
         };
-        //Establish the layout
+
+        // Layout
         let layout = {
             hovermode: "closest",
-            xaxis: {title: "OTU ID"}
+            xaxis: {title: "OTU ID"},
         };
-        //make the dictionary
-        let bubbleData = [bubbleChart];
-        //graph
-        Plotly.newPlot("bubble", bubbleData, layout);
+        let graphData = [trace1]
+        // Call Plotly to plot the bubble chart
+        Plotly.newPlot("bubble", graphData, layout)
+    });
+};
 
-    })  
+//Last, but certainly not least, we want to update the graphs when we 
+//change the dropdown menu value
+
+function optionChanged(value) { 
+    // Check to make sure we are switching values
+    console.log(value); 
+
+    //Change everything accordingly 
+    buildMetadata(value);
+    buildBarChart(value);
+    buildBubbleChart(value);
 };
 
 
